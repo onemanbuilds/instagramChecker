@@ -123,3 +123,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+InstagramChecker/proxies.txt
+InstagramChecker/InstagramChecker.exe
+InstagramChecker/hits.txt
+InstagramChecker/detailed_hits.txt
+InstagramChecker/combos.txt
+InstagramChecker/bads.txt
