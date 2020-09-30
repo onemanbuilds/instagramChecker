@@ -7,6 +7,7 @@ from colorama import init,Fore
 from datetime import datetime
 from threading import Thread,Lock
 from multiprocessing.dummy import Pool as ThreadPool
+import sys
 
 init()
 
@@ -33,7 +34,10 @@ waiting_time = int(input('[QUESTION] Enter the waiting time between requests: ')
 
 def GetRandomProxy():
     proxies_file = ReadFile('proxies.txt','r')
-    proxies = {"http://":random.choice(proxies_file), "https://": random.choice(proxies_file)}
+    proxies = {
+        "http":"http://{0}".format(random.choice(proxies_file)),
+        "https":"https://{0}".format(random.choice(proxies_file))
+        }
     return proxies
 
 def GetInstaFollowersNum(username):
@@ -108,7 +112,7 @@ def login_instagram(combos):
         PrintText('ERROR','{0}:{1} -> {2}'.format(combos.split('.')[0],combos.split('.')[-1],json_data['message']),Fore.RED,Fore.WHITE)
 
 def PrintText(info_name,text,info_color:Fore,text_color:Fore):
-    print(f'[{info_color+info_name+Fore.RESET}] '+text_color+f'{text}')
+    sys.stdout.write(f'[{info_color+info_name+Fore.RESET}] '+text_color+f'{text}\n')
 
 def StartCheck(combos):
     pool = ThreadPool()
