@@ -6,7 +6,9 @@ import random
 from colorama import init,Fore
 from datetime import datetime
 from multiprocessing.dummy import Pool as ThreadPool
+from threading import Thread, Lock
 import sys
+
 
 init()
 
@@ -111,7 +113,13 @@ def login_instagram(combos):
         PrintText('ERROR','{0}:{1} -> {2}'.format(combos.split('.')[0],combos.split('.')[-1],json_data['message']),Fore.RED,Fore.WHITE)
 
 def PrintText(info_name,text,info_color:Fore,text_color:Fore):
+    lock = Lock()
+    lock.acquire()
+    sys.stdout.flush()
+    text = text.encode('ascii','replace').decode()
     sys.stdout.write(f'[{info_color+info_name+Fore.RESET}] '+text_color+f'{text}\n')
+    lock.release()
+    
 
 def StartCheck(combos):
     pool = ThreadPool()
