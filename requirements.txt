@@ -7,3 +7,4 @@ colorama
 datetime
 multiprocessing
 sys
+threading
