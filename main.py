@@ -5,7 +5,6 @@ import time
 import random
 from colorama import init,Fore
 from datetime import datetime
-from threading import Thread,Lock
 from multiprocessing.dummy import Pool as ThreadPool
 import sys
 
