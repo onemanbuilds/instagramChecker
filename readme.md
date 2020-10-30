@@ -2,10 +2,10 @@
  Simple tool which checks username/email password combinations.
  
 # Tool
-![](https://i.ibb.co/54LhwRK/tool.png)
+![](https://i.ibb.co/sKKH0SB/instagram-checker-tool.png)
 
 # Example
-![](https://i.ibb.co/ZYPCLGh/example2.png)
+![](https://i.ibb.co/q5jSJDL/instagram-checker-example.png)
 
   
 # Legal
