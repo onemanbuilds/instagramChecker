@@ -1,5 +1,10 @@
 # InstagramChecker
  Simple tool which checks username/email password combinations.
+
+# Installation
+```
+pip3 install -r requirements.txt
+``` 
  
 # Tool
 ![](https://i.ibb.co/sKKH0SB/instagram-checker-tool.png)
