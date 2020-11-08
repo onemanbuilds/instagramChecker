@@ -7,11 +7,7 @@ pip3 install -r requirements.txt
 ``` 
  
 # Tool
-![](https://i.ibb.co/sKKH0SB/instagram-checker-tool.png)
-
-# Example
-![](https://i.ibb.co/q5jSJDL/instagram-checker-example.png)
-
+![](https://i.ibb.co/FzSb6VS/instagram-checker-v2-tool.png)
   
 # Legal
  This was merely a speedrun to demonstrate how checkers work.<br/>
